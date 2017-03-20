@@ -20,7 +20,6 @@ import re
 # python 2 and python 3 compatibility library
 from six import iteritems
 
-from ..configuration import Configuration
 from ..api_client import ApiClient
 
 
@@ -32,13 +31,9 @@ class FakeClassnameTags123Api(object):
     """
 
     def __init__(self, api_client=None):
-        config = Configuration()
-        if api_client:
-            self.api_client = api_client
-        else:
-            if not config.api_client:
-                config.api_client = ApiClient()
-            self.api_client = config.api_client
+        if api_client is None:
+            api_client = ApiClient()
+        self.api_client = api_client
 
     def test_classname(self, body, **kwargs):
         """
@@ -129,7 +124,11 @@ class FakeClassnameTags123Api(object):
         # Authentication setting
         auth_settings = []
 
+<<<<<<< HEAD:samples/client/petstore/python/petstore_api/apis/fake_classname_tags_123_api.py
         return self.api_client.call_api('/fake_classname_test', 'PATCH',
+=======
+        return self.api_client.call_api(resource_path, 'PATCH',
+>>>>>>> 406b1275f9bd658edbacddbc69fa564ed1d9b2d1:samples/client/petstore/python/petstore_api/apis/fake_classname_tags123_api.py
                                         path_params,
                                         query_params,
                                         header_params,
