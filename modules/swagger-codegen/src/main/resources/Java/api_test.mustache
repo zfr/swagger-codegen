@@ -5,6 +5,9 @@ package {{package}};
 import {{invokerPackage}}.ApiException;
 {{#imports}}import {{import}};
 {{/imports}}
+{{#operations}}{{#operation}}{{#vendorExtensions.x-collapse-params}}
+import {{modelPackage}}.{{{.}}};{{/vendorExtensions.x-collapse-params}}{{/operation}}{{/operations}}
+
 import org.junit.Test;
 import org.junit.Ignore;
 
@@ -34,10 +37,12 @@ public class {{classname}}Test {
      */
     @Test
     public void {{operationId}}Test() throws ApiException {
-        {{#allParams}}
-        {{{dataType}}} {{paramName}} = null;
-        {{/allParams}}
-        {{#returnType}}{{{returnType}}} response = {{/returnType}}api.{{operationId}}({{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
+        {{#vendorExtensions.x-collapse-params}}{{{.}}} params = null;{{/vendorExtensions.x-collapse-params}}
+        {{^vendorExtensions.x-collapse-params}}{{#allParams}}
+            {{{dataType}}} {{paramName}} = null;
+        {{/allParams}}{{/vendorExtensions.x-collapse-params}}
+
+        {{#returnType}}{{{returnType}}} response = {{/returnType}}api.{{operationId}}({{#vendorExtensions.x-collapse-params}}params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}});
 
         // TODO: test validations
     }

@@ -9,7 +9,13 @@ import javax.ws.rs.core.GenericType;
 
 {{#imports}}import {{import}};
 {{/imports}}
-
+{{#operations}}
+{{#operation}}
+{{#vendorExtensions.x-collapse-params}}
+import {{modelPackage}}.{{{.}}};
+{{/vendorExtensions.x-collapse-params}}
+{{/operation}}
+{{/operations}}
 {{^fullJavaUtil}}
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,26 +44,24 @@ public class {{classname}} {
     this.{{localVariablePrefix}}apiClient = apiClient;
   }
 
-  {{#operation}}
-  /**
-   * {{summary}}
-   * {{notes}}
-   {{#allParams}}
-   * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
-   {{/allParams}}
-   {{#returnType}}
-   * @return {{returnType}}
-   {{/returnType}}
-   * @throws ApiException if fails to make API call
-   {{#isDeprecated}}
-   * @Deprecated
-   {{/isDeprecated}}
-   {{#externalDocs}}
-   * {{description}}
-   * @see {{url}}
-   {{/externalDocs}}
-   */
-  public {{#returnType}}{{{returnType}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) throws ApiException {
+{{#operation}}
+    /**
+    * {{summary}}
+    * {{notes}}
+    {{#vendorExtensions.x-collapse-params}}* @param params Parameter object of the given request{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}*{{#allParams}}
+    * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}
+    {{#returnType}}
+    * @return {{returnType}}
+    {{/returnType}}
+    * @throws ApiException if fails to make API call
+    {{#isDeprecated}}
+    * @Deprecated
+    {{/isDeprecated}}
+    */
+    public {{#returnType}}{{{returnType}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#vendorExtensions.x-collapse-params}}{{{.}}} params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}) throws ApiException {
+    {{#vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}} = params.{{{vendorExtensions.x-java-collapse-params-getter}}}(){{#isEnum}}.getValue(){{/isEnum}};
+    {{/allParams}}{{/vendorExtensions.x-collapse-params}}
+
     Object {{localVariablePrefix}}localVarPostBody = {{#bodyParam}}{{paramName}}{{/bodyParam}}{{^bodyParam}}null{{/bodyParam}};
     {{#allParams}}{{#required}}
     // verify the required parameter '{{paramName}}' is set

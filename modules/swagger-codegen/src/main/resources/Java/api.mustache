@@ -11,7 +11,13 @@ import {{invokerPackage}}.Pair;
 
 {{#imports}}import {{import}};
 {{/imports}}
-
+{{#operations}}
+{{#operation}}
+{{#vendorExtensions.x-collapse-params}}
+import {{modelPackage}}.{{{.}}};
+{{/vendorExtensions.x-collapse-params}}
+{{/operation}}
+{{/operations}}
 
 {{^fullJavaUtil}}
 import java.util.ArrayList;
@@ -45,9 +51,9 @@ public class {{classname}} {
   /**
    * {{summary}}
    * {{notes}}
-   {{#allParams}}
-   * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
-   {{/allParams}}
+   {{#vendorExtensions.x-collapse-params}}{{#allParams}}
+   * @param params.{{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}* @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
+   {{/allParams}}{{/vendorExtensions.x-collapse-params}}
    {{#returnType}}
    * @return {{returnType}}
    {{/returnType}}
@@ -60,7 +66,10 @@ public class {{classname}} {
    * @see {{url}}
    {{/externalDocs}}
    */
-  public {{#returnType}}{{{returnType}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) throws ApiException {
+  public {{#returnType}}{{{returnType}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#vendorExtensions.x-collapse-params}}{{{.}}} params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}) throws ApiException {
+    {{#vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}} = params.{{{vendorExtensions.x-java-collapse-params-getter}}}(){{#isEnum}}.getValue(){{/isEnum}};
+    {{/allParams}}{{/vendorExtensions.x-collapse-params}}
+
     Object {{localVariablePrefix}}localVarPostBody = {{#bodyParam}}{{paramName}}{{/bodyParam}}{{^bodyParam}}null{{/bodyParam}};
     {{#allParams}}{{#required}}
     // verify the required parameter '{{paramName}}' is set

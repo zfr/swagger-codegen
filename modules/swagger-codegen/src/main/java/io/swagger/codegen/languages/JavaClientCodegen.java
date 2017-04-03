@@ -275,14 +275,23 @@ public class JavaClientCodegen extends AbstractJavaCodegen
     @Override
     public Map<String, Object> postProcessOperations(Map<String, Object> objs) {
         super.postProcessOperations(objs);
-        if (usesAnyRetrofitLibrary()) {
-            Map<String, Object> operations = (Map<String, Object>) objs.get("operations");
-            if (operations != null) {
-                List<CodegenOperation> ops = (List<CodegenOperation>) operations.get("operation");
-                for (CodegenOperation operation : ops) {
+        Map<String, Object> operationDetails = (Map<String, Object>) objs.get("operations");
+        if (operationDetails != null) {
+            List<CodegenOperation> ops = (List<CodegenOperation>) operationDetails.get("operation");
+            for (CodegenOperation operation : ops) {
+                if (operation.vendorExtensions.containsKey("x-collapse-params")) {
+                    for (CodegenParameter parameter : operation.allParams) {
+                        if (parameter.isBoolean) {
+                            parameter.vendorExtensions.put("x-java-collapse-params-getter", "is" + getterAndSetterCapitalize(parameter.paramName));
+                        } else{
+                            parameter.vendorExtensions.put("x-java-collapse-params-getter", "get" + getterAndSetterCapitalize(parameter.paramName));
+                        }
+                    }
+                }
+                if(usesAnyRetrofitLibrary()) {
                     if (operation.hasConsumes == Boolean.TRUE) {
 
-                        if (isMultipartType(operation.consumes)) {
+                        if ( isMultipartType(operation.consumes) ) { 
                             operation.isMultipart = Boolean.TRUE;
                         }
                         else {

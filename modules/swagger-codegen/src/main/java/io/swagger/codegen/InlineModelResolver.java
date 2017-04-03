@@ -1,6 +1,7 @@
 package io.swagger.codegen;
 
 import io.swagger.models.*;
+import io.swagger.models.parameters.AbstractSerializableParameter;
 import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.properties.*;
@@ -38,6 +39,15 @@ public class InlineModelResolver {
 
                 for (Operation operation : path.getOperations()) {
                     List<Parameter> parameters = operation.getParameters();
+
+                    boolean collapseParams = operation.getVendorExtensions().containsKey("x-collapse-params");
+                    if (collapseParams) {
+                        String modelName = (String) operation.getVendorExtensions().get("x-collapse-params");
+                        Model collapsedParamsModel = modelFromOperation(operation, modelName);
+
+                        addGenerated(modelName, collapsedParamsModel);
+                        swagger.addDefinition(modelName, collapsedParamsModel);
+                    }
 
                     if (parameters != null) {
                         for (Parameter parameter : parameters) {
@@ -329,6 +339,132 @@ public class InlineModelResolver {
             swagger.addDefinition(key, modelsToAdd.get(key));
             this.addedModels.put(key, modelsToAdd.get(key));
         }
+    }
+
+    public Model modelFromOperation(Operation operation, String path) {
+        ModelImpl model = new ModelImpl();
+        model.setType("object");
+        model.setName(path);
+        model.setDescription(operation.getDescription());
+//        model.setVendorExtension("x-base-request", true);
+
+        List<Parameter> parameters = operation.getParameters();
+        Map<String, Property> properties = new HashMap<>(parameters.size());
+
+        for (Parameter p : parameters) {
+            if (p instanceof AbstractSerializableParameter) {
+                AbstractSerializableParameter parameter = (AbstractSerializableParameter) p;
+                Map<PropertyBuilder.PropertyId, Object> propertyBuilderArgs = new HashMap<>();
+                propertyBuilderArgs.put(PropertyBuilder.PropertyId.VENDOR_EXTENSIONS, operation.getVendorExtensions());
+
+                if (parameter.getEnum() != null && !parameter.getEnum().isEmpty()) {
+                    propertyBuilderArgs = new HashMap<>();
+                    propertyBuilderArgs.put(PropertyBuilder.PropertyId.ENUM, parameter.getEnum());
+                }
+
+                Property property = PropertyBuilder.build(parameter.getType(), parameter.getFormat(), propertyBuilderArgs);
+                property.setName(parameter.getName());
+                property.setDescription(parameter.getDescription());
+                property.setRequired(parameter.getRequired());
+                property.setAllowEmptyValue(parameter.getAllowEmptyValue());
+                if (parameter.getDefaultValue() != null) {
+                    property.setDefault(parameter.getDefaultValue().toString());
+                }
+
+                if (property instanceof ArrayProperty) {
+                    ArrayProperty arrayProperty = (ArrayProperty) property;
+                    arrayProperty.setItems(parameter.getItems());
+                }
+
+                properties.put(property.getName(), property);
+
+            } else if (p instanceof BodyParameter) {
+                BodyParameter bp = (BodyParameter) p;
+
+                if (bp.getSchema() != null) {
+                    Model objectModel = bp.getSchema();
+                    if (objectModel instanceof ModelImpl) {
+                        ModelImpl obj = (ModelImpl) objectModel;
+                        if (obj.getType() == null || "object".equals(obj.getType())) {
+                            Map<String, Property> properties1 = obj.getProperties();
+                            if (properties1 != null && properties1.size() > 0) {
+                                flattenProperties(properties1, path);
+                                String modelName = resolveModelName(obj.getTitle(), bp.getName());
+                                RefModel schema = new RefModel(modelName);
+                                bp.setSchema(schema);
+                                addGenerated(modelName, objectModel);
+                                swagger.addDefinition(modelName, objectModel);
+
+                                RefProperty refProperty = new RefProperty();
+                                refProperty.set$ref(schema.get$ref());
+                                properties.put(bp.getName(), refProperty);
+                            } else {
+                                properties.put(bp.getName(), new ObjectProperty());
+                            }
+
+                        }
+
+                    } else if (objectModel instanceof ArrayModel) {
+                        ArrayModel arrayModel = (ArrayModel) objectModel;
+                        Property inner = arrayModel.getItems();
+                        ArrayProperty arrayProperty = new ArrayProperty();
+                        arrayProperty.setType("array");
+                        arrayProperty.setName(bp.getName());
+                        arrayProperty.setDescription(objectModel.getDescription());
+                        arrayProperty.setItems(arrayModel.getItems());
+
+                        if (inner instanceof ObjectProperty) {
+                            ObjectProperty op = (ObjectProperty) inner;
+                            if (op.getProperties() != null && op.getProperties().size() > 0) {
+                                flattenProperties(op.getProperties(), path);
+                                String modelName = resolveModelName(op.getTitle(), bp.getName());
+
+                                Model innerModel = modelFromProperty(op, modelName);
+                                String existing = matchGenerated(innerModel);
+                                RefProperty refProperty = null;
+                                if (existing != null) {
+                                    refProperty = new RefProperty(existing);
+                                    arrayModel.setItems(refProperty);
+
+                                } else {
+                                    refProperty = new RefProperty(modelName);
+                                    arrayModel.setItems(refProperty);
+                                    addGenerated(modelName, innerModel);
+                                    swagger.addDefinition(modelName, innerModel);
+                                }
+
+                                arrayProperty.setItems(refProperty);
+                            }
+                        } else {
+                            arrayProperty.setItems(arrayModel.getItems());
+                        }
+
+                        properties.put(bp.getName(), arrayProperty);
+
+                    } else if (objectModel instanceof RefModel) {
+                        RefModel refModel = (RefModel) objectModel;
+                        RefProperty refProperty = new RefProperty();
+                        refProperty.set$ref(refModel.get$ref());
+                        properties.put(bp.getName(), refProperty);
+                        // copy all  object properties
+                        /*
+                        ModelImpl modelDefinition = (ModelImpl) swagger.getDefinitions().get(refModel.getSimpleRef());
+                        properties.putAll(modelDefinition.getProperties());
+                        */
+                    } else if (objectModel instanceof ComposedModel) {
+                        //TODO when body param is defined as ComposedModel(ex: allOf usage inside body parameter) exception occurs when processing operation. Needs further investigation
+                    }
+                }
+
+            }
+        }
+
+        if (!properties.isEmpty()) {
+            flattenProperties(properties, path);
+            model.setProperties(properties);
+        }
+
+        return model;
     }
 
     @SuppressWarnings("static-method")

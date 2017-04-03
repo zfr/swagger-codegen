@@ -33,7 +33,13 @@ import java.lang.reflect.Type;
 
 {{#imports}}import {{import}};
 {{/imports}}
-
+{{#operations}}
+{{#operation}}
+{{#vendorExtensions.x-collapse-params}}
+import {{modelPackage}}.{{{.}}};
+{{/vendorExtensions.x-collapse-params}}
+{{/operation}}
+{{/operations}}
 import java.lang.reflect.Type;
 {{^fullJavaUtil}}
 import java.util.ArrayList;
@@ -64,8 +70,10 @@ public class {{classname}} {
 
     {{#operation}}
     /**
-     * Build call for {{operationId}}{{#allParams}}
-     * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}
+     * Build call for {{operationId}}
+    {{#vendorExtensions.x-collapse-params}}{{#allParams}}
+     * @param params.{{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}* @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
+    {{/allParams}}{{/vendorExtensions.x-collapse-params}}
      * @param progressListener Progress listener
      * @param progressRequestListener Progress request listener
      * @return Call to execute
@@ -75,7 +83,11 @@ public class {{classname}} {
      * @see {{url}}
         {{/externalDocs}}
      */
-    public com.squareup.okhttp.Call {{operationId}}Call({{#allParams}}{{{dataType}}} {{paramName}}, {{/allParams}}final ProgressResponseBody.ProgressListener progressListener, final ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
+    public com.squareup.okhttp.Call {{operationId}}Call({{#vendorExtensions.x-collapse-params}}{{{.}}} params,{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{^hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}} final ProgressResponseBody.ProgressListener progressListener, final ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
+
+        {{#vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}} = params.{{{vendorExtensions.x-java-collapse-params-getter}}}(){{#isEnum}}.getValue(){{/isEnum}};
+        {{/allParams}}{{/vendorExtensions.x-collapse-params}}
+
         Object {{localVariablePrefix}}localVarPostBody = {{#bodyParam}}{{paramName}}{{/bodyParam}}{{^bodyParam}}null{{/bodyParam}};
         
         // create path and map variables
@@ -124,7 +136,7 @@ public class {{classname}} {
     }
     
     @SuppressWarnings("rawtypes")
-    private com.squareup.okhttp.Call {{operationId}}ValidateBeforeCall({{#allParams}}{{{dataType}}} {{paramName}}, {{/allParams}}final ProgressResponseBody.ProgressListener progressListener, final ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
+    private com.squareup.okhttp.Call {{operationId}}ValidateBeforeCall({{#vendorExtensions.x-collapse-params}}{{{.}}} params,{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}} {{^hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}} final ProgressResponseBody.ProgressListener progressListener, final ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
         {{^performBeanValidation}}
         {{#allParams}}{{#required}}
         // verify the required parameter '{{paramName}}' is set
@@ -133,7 +145,7 @@ public class {{classname}} {
         }
         {{/required}}{{/allParams}}
         
-        com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}Call({{#allParams}}{{paramName}}, {{/allParams}}progressListener, progressRequestListener);
+        com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}Call({{#vendorExtensions.x-collapse-params}}{{{vendorExtensions.x-collapse-params}}},{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}}, {{/allParams}}{{/vendorExtensions.x-collapse-params}} progressListener, progressRequestListener);
         return {{localVariablePrefix}}call;
 
         {{/performBeanValidation}}
@@ -142,13 +154,14 @@ public class {{classname}} {
             ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
             ExecutableValidator executableValidator = factory.getValidator().forExecutables();
 
-            Object[] parameterValues = { {{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}} };
-            Method method = this.getClass().getMethod("{{operationId}}WithHttpInfo"{{#allParams}}, {{#isListContainer}}java.util.List{{/isListContainer}}{{#isMapContainer}}java.util.Map{{/isMapContainer}}{{^isListContainer}}{{^isMapContainer}}{{{dataType}}}{{/isMapContainer}}{{/isListContainer}}.class{{/allParams}});
+            Object[] parameterValues = { {{#vendorExtensions.x-collapse-params}}params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}} {{/allParams}}{{/vendorExtensions.x-collapse-params}} };
+            Method method = this.getClass().getMethod("{{operationId}}WithHttpInfo"{{#vendorExtensions.x-collapse-params}},{{#isListContainer}}java.util.List{{/isListContainer}}{{#isMapContainer}}java.util.Map{{/isMapContainer}}{{^isListContainer}}{{^isMapContainer}} {{{.}}}{{/isMapContainer}}{{/isListContainer}}.class{{/vendorExtensions.x-collapse-params}}
+{{^vendorExtensions.x-collapse-params}}{{#allParams}}, {{#isListContainer}}java.util.List{{/isListContainer}}{{#isMapContainer}}java.util.Map{{/isMapContainer}}{{^isListContainer}}{{^isMapContainer}}{{{dataType}}}{{/isMapContainer}}{{/isListContainer}}.class{{/allParams}}{{/vendorExtensions.x-collapse-params}});
             Set<ConstraintViolation<{{classname}}>> violations = executableValidator.validateParameters(this, method,
                     parameterValues);
 
             if (violations.size() == 0) {
-                com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}Call({{#allParams}}{{paramName}}, {{/allParams}}progressListener, progressRequestListener);
+                com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}Call({{#vendorExtensions.x-collapse-params}}params,{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}}, {{/allParams}}{{/vendorExtensions.x-collapse-params}}progressListener, progressRequestListener);
                 return {{localVariablePrefix}}call;
             
             } else {
@@ -171,8 +184,11 @@ public class {{classname}} {
 
     /**
      * {{summary}}
-     * {{notes}}{{#allParams}}
-     * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{#returnType}}
+     * {{notes}}
+     {{#vendorExtensions.x-collapse-params}}{{#allParams}}
+     * @param params.{{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}* @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
+     {{/allParams}}{{/vendorExtensions.x-collapse-params}}
+     {{#returnType}}
      * @return {{returnType}}{{/returnType}}
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
         {{#externalDocs}}
@@ -180,15 +196,17 @@ public class {{classname}} {
      * @see {{url}}
         {{/externalDocs}}
      */
-    public {{#returnType}}{{{returnType}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) throws ApiException {
-        {{#returnType}}ApiResponse<{{{returnType}}}> {{localVariablePrefix}}resp = {{/returnType}}{{operationId}}WithHttpInfo({{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}});{{#returnType}}
+    public {{#returnType}}{{{returnType}}} {{/returnType}}{{^returnType}}void {{/returnType}}{{operationId}}({{#vendorExtensions.x-collapse-params}}{{{.}}} params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}) throws ApiException {
+        {{#returnType}}ApiResponse<{{{returnType}}}> {{localVariablePrefix}}resp = {{/returnType}}{{operationId}}WithHttpInfo({{#vendorExtensions.x-collapse-params}}params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}} {{#hasMore}}, {{/hasMore}} {{/allParams}}{{/vendorExtensions.x-collapse-params}});{{#returnType}}
         return {{localVariablePrefix}}resp.getData();{{/returnType}}
     }
 
     /**
      * {{summary}}
-     * {{notes}}{{#allParams}}
-     * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}
+     * {{notes}}
+     {{#vendorExtensions.x-collapse-params}}{{#allParams}}
+     * @param params.{{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}* @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
+     {{/allParams}}{{/vendorExtensions.x-collapse-params}}
      * @return ApiResponse&lt;{{#returnType}}{{returnType}}{{/returnType}}{{^returnType}}Void{{/returnType}}&gt;
      * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the response body
         {{#externalDocs}}
@@ -196,16 +214,18 @@ public class {{classname}} {
      * @see {{url}}
         {{/externalDocs}}
      */
-    public ApiResponse<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void{{/returnType}}> {{operationId}}WithHttpInfo({{#allParams}}{{#useBeanValidation}}{{>beanValidationQueryParams}}{{/useBeanValidation}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) throws ApiException {
-        com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}ValidateBeforeCall({{#allParams}}{{paramName}}, {{/allParams}}null, null);
+    public ApiResponse<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void{{/returnType}}> {{operationId}}WithHttpInfo({{#vendorExtensions.x-collapse-params}}{{{.}}} params{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{#useBeanValidation}}{{>beanValidationQueryParams}}{{/useBeanValidation}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}) throws ApiException {
+        com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}ValidateBeforeCall({{#vendorExtensions.x-collapse-params}}params,{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}}, {{/allParams}}{{/vendorExtensions.x-collapse-params}} null, null);
         {{#returnType}}Type {{localVariablePrefix}}localVarReturnType = new TypeToken<{{{returnType}}}>(){}.getType();
         return {{localVariablePrefix}}apiClient.execute({{localVariablePrefix}}call, {{localVariablePrefix}}localVarReturnType);{{/returnType}}{{^returnType}}return {{localVariablePrefix}}apiClient.execute({{localVariablePrefix}}call);{{/returnType}}
     }
 
     /**
      * {{summary}} (asynchronously)
-     * {{notes}}{{#allParams}}
-     * @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}
+     * {{notes}}
+     {{#vendorExtensions.x-collapse-params}}{{#allParams}}
+     * @param params.{{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}{{/allParams}}{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}* @param {{paramName}} {{description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
+     {{/allParams}}{{/vendorExtensions.x-collapse-params}}
      * @param callback The callback to be executed when the API call finishes
      * @return The request call
      * @throws ApiException If fail to process the API call, e.g. serializing the request body object
@@ -214,7 +234,7 @@ public class {{classname}} {
      * @see {{url}}
         {{/externalDocs}}
      */
-    public com.squareup.okhttp.Call {{operationId}}Async({{#allParams}}{{{dataType}}} {{paramName}}, {{/allParams}}final ApiCallback<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void{{/returnType}}> {{localVariablePrefix}}callback) throws ApiException {
+    public com.squareup.okhttp.Call {{operationId}}Async({{#vendorExtensions.x-collapse-params}}{{{.}}} params,{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}} {{^hasMore}}, {{/hasMore}}{{/allParams}}{{/vendorExtensions.x-collapse-params}} final ApiCallback<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Void{{/returnType}}> {{localVariablePrefix}}callback) throws ApiException {
 
         ProgressResponseBody.ProgressListener progressListener = null;
         ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
@@ -235,7 +255,7 @@ public class {{classname}} {
             };
         }
 
-        com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}ValidateBeforeCall({{#allParams}}{{paramName}}, {{/allParams}}progressListener, progressRequestListener);
+        com.squareup.okhttp.Call {{localVariablePrefix}}call = {{operationId}}ValidateBeforeCall({{#vendorExtensions.x-collapse-params}}params,{{/vendorExtensions.x-collapse-params}}{{^vendorExtensions.x-collapse-params}}{{#allParams}}{{paramName}}, {{/allParams}}{{/vendorExtensions.x-collapse-params}}progressListener, progressRequestListener);
         {{#returnType}}Type {{localVariablePrefix}}localVarReturnType = new TypeToken<{{{returnType}}}>(){}.getType();
         {{localVariablePrefix}}apiClient.executeAsync({{localVariablePrefix}}call, {{localVariablePrefix}}localVarReturnType, {{localVariablePrefix}}callback);{{/returnType}}{{^returnType}}{{localVariablePrefix}}apiClient.executeAsync({{localVariablePrefix}}call, {{localVariablePrefix}}callback);{{/returnType}}
         return {{localVariablePrefix}}call;
